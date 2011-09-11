@@ -4,7 +4,7 @@ errorout() { echo "$*" >&2; exit 1; }
 
 usage() { echo 'scripts/install [ --clean ] [ --fast ]'; exit 1; }
 
-install_pkgs() {
+install_pkgs() { # {{{
   local pkg
 
   for pkg; do
@@ -23,7 +23,9 @@ install_pkgs() {
       $CABAL build
       $CABAL configure --enable-tests 
       $CABAL build
-      $CABAL test
+
+      $test && $CABAL test
+
       $CABAL check
 
       $fast || $CABAL haddock --executables
@@ -32,37 +34,36 @@ install_pkgs() {
     )
   done
 }
+# }}}
 
-hamlet_pkgs=( shakespeare
-              shakespeare-css
-              shakespeare-js
-              shakespeare-text
-              hamlet
-            )
-
-# todo: persistent
-
-wai_pkgs=( wai
-           wai-test
-           wai-extra
-           warp
-           wai-app-static
-           wai-handler-fastcgi
-           wai-handler-launch
-           wai-handler-scgi
-           warp-static
-         )
-
-yesod_pkgs=( yesod-core
-             yesod-json
-             yesod-static
-             yesod-persistent
-             yesod-newsfeed
-             yesod-form
-             yesod-auth
-             yesod-sitemap
-             yesod
-           )
+hamlet_pkgs=(     shakespeare
+                  shakespeare-css
+                  shakespeare-js
+                  shakespeare-text
+                  hamlet                )
+persistent_pkgs=( persistent-template
+                  persistent-sqlite
+                  persistent-postgresql
+                  persistent-mongoDB
+                  persistent            )
+wai_pkgs=(        wai
+                  wai-test
+                  wai-extra
+                  warp
+                  wai-app-static
+                  wai-handler-fastcgi
+                  wai-handler-launch
+                  wai-handler-scgi
+                  warp-static           )
+yesod_pkgs=(      yesod-core
+                  yesod-json
+                  yesod-static
+                  yesod-persistent
+                  yesod-newsfeed
+                  yesod-form
+                  yesod-auth
+                  yesod-sitemap
+                  yesod                 )
 
 # allow an env var to override
 CABAL=${CABAL:-cabal}
@@ -71,14 +72,19 @@ CABAL=${CABAL:-cabal}
 read -r repo < <(git remote -v | sed '/^origin .*\/\(.*\)\.git (fetch)/!d; s//\1/g')
 [[ -z "$repo" ]] && errorout 'unable to determine repository name.'
 
+echo "Installing for repo $repo..."
+
 # set the pkgs array to those appropriate for that repo
 varname="${repo}_pkgs[@]"
 declare -a pkgs=( ${!varname} )
 [[ "${#pkgs[@]}" -eq 0 ]] && errorout "no packages to install for repository $repo."
 
+# set defaults
+test=true
 clean=false
 fast=false
 
+# commandline options
 while [[ -n "$1" ]]; do
   case "$1" in
     -c|--clean) clean=true ;;
@@ -88,7 +94,20 @@ while [[ -n "$1" ]]; do
   shift
 done
 
-# install testing dependencies
-$CABAL install HUnit QuickCheck 'hspec >= 0.6.1 && < 0.7' shelltestrunner
+# persistent is handled specially
+if [[ "$repo" = 'persistent' ]]; then
+  $CABAL install HUnit QuickCheck 'hspec >= 0.6.1 && < 0.7' 'file-location >= 0.4 && < 0.5'
 
-install_pkgs "${pkgs[@]}"
+  test=true  # install pool with tests
+  install_pkgs pool
+
+  test=false # install persistent without tests
+  install_pkgs persistent
+
+  test=true  # now install all persistent packages with tests
+  install_pkgs "${pkgs[@]}"
+else
+  $CABAL install HUnit QuickCheck 'hspec >= 0.6.1 && < 0.7' shelltestrunner
+
+  install_pkgs "${pkgs[@]}"
+fi
