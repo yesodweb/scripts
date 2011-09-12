@@ -69,7 +69,10 @@ yesod_pkgs=(      yesod-core
 CABAL=${CABAL:-cabal}
 
 # determine what repo you're in dynamically
-read -r repo < <(git remote -v | sed '/^origin\s.*\/\(.*\)\.git (fetch)/!d; s//\1/g')
+if ! read -r repo < <(git remote -v | sed '/^origin\s.*\/\(.*\) (fetch)$/!d; s//\1/g; s/\.git$//g'); then
+  errorout 'unable to determine repository name.'
+fi
+
 [[ -z "$repo" ]] && errorout 'unable to determine repository name.'
 
 echo "Installing for repo $repo..."
