@@ -1,0 +1,110 @@
+#!/bin/bash
+
+usage() { echo 'todo'; exit 1; }
+
+# runs the function named by $1 as a test.  failures are tracked to be
+# reported on after all tests have been run
+run_test() { # {{{
+  local test_function="$*"
+
+  $verbose && exec 1>/dev/stdout || exec 1>/dev/null
+
+  type -p setup && setup
+
+  if $test_function 2>"$tmp/$test_function.errors"; then
+    echo -n '.'
+    rm -f "$tmp/$test_function.errors"
+  else
+    echo -n 'F'
+    FAILURES+=( "$test_function" )
+  fi
+
+  type -p teardown && teardown
+}
+# }}}
+
+# a test file can contain the follwing special function definitions:
+#
+#   setup:    run before _every_ test
+#   teardown: run after _every_ test
+#   test_*:   any functions prefixed with this are taken to be your
+#             actual tests
+#
+# unset any existing definitions and source new ones from the file named
+# by $1
+source_test_file() { # {{{
+  local test_file="$1" test
+
+  [[ -f "$test_file" ]] || return 1
+
+  unset -f setup teardown
+
+  while read -r test; do
+    unset -f test # unset any already-defined test_ functions
+  done < <(set | sed '/^test_\([^ ]*\) ()/!d; s//\1/g')
+
+  source "$test_file" || return 1
+
+  # read any newly defined test_ funcitons into a TESTS array
+  read -r -a TESTS < <(set | sed '/^test_\([^ ]*\) ()/!d; s//\1/g')
+}
+# }}}
+
+# outputs a report of tests and failures
+report() { # {{{
+  exec 1>/dev/stdout
+
+  echo
+  echo
+  echo "Tests: ${#TESTS[@]}, Failures: ${#FAILURES[@]}."
+  echo
+
+  [[ ${#FAILURES[@]} -eq 0 ]] && return 0
+
+  for test in ${FAILURES[@]}; do
+    echo "Failure: $test"
+    echo 'details:'
+    echo
+
+    if [[ -f "$tmp/$test.errors" ]]; then
+      cat "$tmp/$test.errors"
+      rm  "$tmp/$test.errors"
+    else
+      echo '<no stderr captured>'
+    fi
+
+    echo
+  done
+
+  return ${#FAILURES[@]}
+}
+# }}}
+
+tmp='/tmp'
+verbose=false
+
+while [[ -n "$1" ]]; do
+  case "$1" in
+    -t|--tmp)     shift; tmp="$1" ;;
+    -v|--verbose) verbose=true    ;;
+    *)            usage           ;;
+  esac
+done
+
+# todo: compile and cleanup. these actions should probably occur before
+# and after all the tests in all the test files. what about testing more
+# than one package at a time? what's the simplest way to get the
+# how-to-compile and what-to-cleanup info from the caller? can we
+# generalize to "cabal install here" and "remove the pkg after" like
+# yesod/test/run.sh does now?
+
+echo 'Started'
+for file in test/*_test.sh; do
+  source_test_file "$file"
+
+  for test in "${TESTS[@]}"; do
+    run_test $test
+  done
+done
+
+report
