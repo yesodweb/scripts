@@ -5,10 +5,8 @@ errorout() { echo "$*" >&2; exit 1; }
 usage() { echo 'scripts/install [ --clean ] [ --fast ]'; exit 1; }
 
 test_pkg() {
-  local pkg
-  echo "testing $pkg..."
-
       if $test; then
+        echo "testing $1..."
         $CABAL configure --enable-tests
         $CABAL build
         $CABAL test
