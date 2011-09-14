@@ -4,6 +4,19 @@ errorout() { echo "$*" >&2; exit 1; }
 
 usage() { echo 'scripts/install [ --clean ] [ --fast ]'; exit 1; }
 
+test_pkg() {
+  local pkg
+  echo "testing $pkg..."
+
+      if $test; then
+        $CABAL configure --enable-tests
+        $CABAL build
+        $CABAL test
+      fi
+
+      $CABAL check
+}
+
 install_pkgs() { # {{{
   local pkg
 
@@ -21,12 +34,8 @@ install_pkgs() { # {{{
       fi
 
       $CABAL build
-      $CABAL configure --enable-tests 
-      $CABAL build
 
-      $test && $CABAL test
-
-      $CABAL check
+      test_pkg pkg
 
       $fast || $CABAL haddock --executables
 
@@ -41,11 +50,12 @@ hamlet_pkgs=(     shakespeare
                   shakespeare-js
                   shakespeare-text
                   hamlet                )
-persistent_pkgs=( persistent-template
+persistent_pkgs=( pool
+                  persistent
+                  persistent-template
                   persistent-sqlite
                   persistent-postgresql
-                  persistent-mongoDB
-                  persistent            )
+                  persistent-mongoDB    )
 wai_pkgs=(        wai
                   wai-test
                   wai-extra
@@ -99,16 +109,16 @@ done
 
 # persistent is handled specially
 if [[ "$repo" = 'persistent' ]]; then
-  $CABAL install HUnit QuickCheck 'hspec >= 0.6.1 && < 0.7' 'file-location >= 0.4 && < 0.5'
+  # testing dependencies
+  $CABAL install HUnit QuickCheck 'hspec >= 0.6.1 && < 0.7' 'file-location'
 
-  test=true  # install pool with tests
-  install_pkgs pool
-
-  test=false # install persistent without tests
-  install_pkgs persistent
-
-  test=true  # now install all persistent packages with tests
+  test=false  # install all persistent packages without tests
   install_pkgs "${pkgs[@]}"
+
+  test=true # persistent is the only package with tests
+  cd "./persistent"
+  test_pkg "persistent"
+
 else
   $CABAL install HUnit QuickCheck 'hspec >= 0.6.1 && < 0.7' shelltestrunner
 
