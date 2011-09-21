@@ -8,6 +8,8 @@ install_pkgs() { # {{{
   local pkg
 
   for pkg; do
+    [[ -d "./$pkg" ]] || continue
+
     echo "Installing $pkg..."
 
     (
@@ -63,6 +65,7 @@ yesod_pkgs=(      yesod-core
                   yesod-form
                   yesod-auth
                   yesod-sitemap
+                  yesod-default
                   yesod                 )
 
 # allow an env var to override
