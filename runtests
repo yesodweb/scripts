@@ -1,17 +1,36 @@
 #!/bin/bash
-
-usage() { echo 'todo'; exit 1; }
+#
+# yesod test runner
+#
+# searched for "test files" at test/*_test.sh
+#
+# a test file can contain the follwing special function definitions:
+#
+#   setup:    run before _every_ test
+#   teardown: run after _every_ test
+#   test_*:   any functions prefixed with this are taken to be your
+#             actual tests
+#
+# compiles the application and runs any test_* functions "as tests",
+# meaning:
+#
+# stderr is silenced (unless --verbose) and stderr is collected in /tmp
+# (use --tmp <dir> to override). after all tests finish, the failurs and
+# collected stderr is reported.
+#
+###
+usage() { echo 'runtests [ --verbose ] [ --tmp <dir> ]'; exit 1; }
 
 # runs the function named by $1 as a test.  failures are tracked to be
 # reported on after all tests have been run
 run_test() { # {{{
-  local test_function="$*"
+  local test_function="$*" stdout
 
-  $verbose && exec 1>/dev/stdout || exec 1>/dev/null
+  $verbose && stdout='/dev/stdout' || stdout='/dev/null'
 
   type -p setup && setup
 
-  if $test_function 2>"$tmp/$test_function.errors"; then
+  if $test_function >"$stdout" 2>"$tmp/$test_function.errors"; then
     echo -n '.'
     rm -f "$tmp/$test_function.errors"
   else
@@ -33,26 +52,26 @@ run_test() { # {{{
 # unset any existing definitions and source new ones from the file named
 # by $1
 source_test_file() { # {{{
-  local test_file="$1" test
+  local test_file="$1" test_
 
   [[ -f "$test_file" ]] || return 1
 
   unset -f setup teardown
 
-  while read -r test; do
-    unset -f test # unset any already-defined test_ functions
-  done < <(set | sed '/^test_\([^ ]*\) ()/!d; s//\1/g')
+  while read -r test_; do
+    unset -f test_ # unset any already-defined test_ functions
+  done < <(set | sed '/^\(test_[^ ]*\) ()/!d; s//\1/g')
 
   source "$test_file" || return 1
 
   # read any newly defined test_ funcitons into a TESTS array
-  read -r -a TESTS < <(set | sed '/^test_\([^ ]*\) ()/!d; s//\1/g')
+  read -r -d '\n' -a TESTS < <(set | sed '/^\(test_[^ ]*\) ()/!d; s//\1/g')
 }
 # }}}
 
 # outputs a report of tests and failures
 report() { # {{{
-  exec 1>/dev/stdout
+  local test_
 
   echo
   echo
@@ -61,14 +80,14 @@ report() { # {{{
 
   [[ ${#FAILURES[@]} -eq 0 ]] && return 0
 
-  for test in ${FAILURES[@]}; do
-    echo "Failure: $test"
+  for test_ in ${FAILURES[@]}; do
+    echo "Failure: $test_"
     echo 'details:'
     echo
 
-    if [[ -f "$tmp/$test.errors" ]]; then
-      cat "$tmp/$test.errors"
-      rm  "$tmp/$test.errors"
+    if [[ -f "$tmp/$test_.errors" ]]; then
+      cat "$tmp/$test_.errors"
+      rm  "$tmp/$test_.errors"
     else
       echo '<no stderr captured>'
     fi
@@ -91,20 +110,30 @@ while [[ -n "$1" ]]; do
   esac
 done
 
-# todo: compile and cleanup. these actions should probably occur before
-# and after all the tests in all the test files. what about testing more
-# than one package at a time? what's the simplest way to get the
-# how-to-compile and what-to-cleanup info from the caller? can we
-# generalize to "cabal install here" and "remove the pkg after" like
-# yesod/test/run.sh does now?
+echo 'Compiling application...'
+(
+  set -e
+  cabal clean
+  cabal install
+  cabal sdist
+) &>/dev/null || { echo 'Failed.' >&2; exit 1; }
+
+read -r pkg < <(find dist/ -type f -name '*.tar.gz' | sort -rV)
+dir="$(basename "$pkg" .tar.gz)"
+
+tar -xzf "$pkg"
 
 echo 'Started'
 for file in test/*_test.sh; do
   source_test_file "$file"
 
+  cd "$dir"
   for test in "${TESTS[@]}"; do
     run_test $test
   done
+  cd - >/dev/null
 done
+
+rm -rf "$dir"
 
 report
