@@ -95,10 +95,18 @@ while [[ -n "$1" ]]; do
   case "$1" in
     -c|--clean) clean=true ;;
     -f|--fast)  fast=true  ;;
-    *)          usage      ;;
+    -h|--help)  usage      ;;
+    *)          break      ;;
   esac
   shift
 done
+
+# allow individual packages to be passed on the commandline
+if [[ $# -ne 0 ]]; then
+  $CABAL install HUnit QuickCheck 'hspec >= 0.6.1 && < 0.7' shelltestrunner
+  install_pkgs "$@"
+  exit $?
+fi
 
 # persistent is handled specially
 if [[ "$repo" = 'persistent' ]]; then
