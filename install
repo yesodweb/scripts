@@ -119,14 +119,14 @@ fi
 # persistent is handled specially
 if [[ "$repo" = 'persistent' ]]; then
   # testing dependencies
-  $CABAL install HUnit QuickCheck 'file-location' 'hspec >= 0.8 && < 0.9'
+  $CABAL install HUnit QuickCheck 'file-location' 'hspec >= 0.8 && < 0.10'
 
   test=false  # install all persistent packages without tests
   install_pkgs "${pkgs[@]}"
 
   test=true # persistent is the only package with tests
-  cd "./persistent"
-  test_pkg "persistent"
+  cd "./persistent-test"
+  test_pkg "persistent-test"
 
 else
   $CABAL install HUnit QuickCheck 'hspec >= 0.8 && < 0.9' shelltestrunner
