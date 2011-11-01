@@ -119,7 +119,7 @@ if [[ $# -ne 0 ]]; then
 fi
 
 # persistent is handled specially
-if [[ "$repo" = 'persistent' ]]; then
+if [[ "$repo" == 'persistent' ]]; then
   # testing dependencies
   $CABAL install HUnit QuickCheck 'file-location' 'hspec >= 0.8 && < 0.10'
 
