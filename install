@@ -82,7 +82,7 @@ yesod_pkgs=(      yesod-core
 CABAL=${CABAL:-cabal}
 
 # determine what repo you're in dynamically
-if ! read -r repo < <(git remote -v | sed '/^origin\s.*\/\(.*\)\s\s*(fetch)$/!d; s//\1/g; s/\.git$//g');then
+if ! read -r repo < <(git remote -v |grep '^origin.*(fetch)' | sed 's/^.*\///; s/\.git.*$//');then
   errorout 'unable to determine repository name.'
 fi
 
