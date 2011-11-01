@@ -113,7 +113,7 @@ done
 
 # allow individual packages to be passed on the commandline
 if [[ $# -ne 0 ]]; then
-  $CABAL install HUnit QuickCheck 'hspec >= 0.6.1 && < 0.7' shelltestrunner
+  $CABAL install HUnit QuickCheck 'hspec >= 0.8 && < 0.10'
   install_pkgs "$@"
   exit $?
 fi
@@ -126,12 +126,12 @@ if [[ "$repo" = 'persistent' ]]; then
   test=false  # install all persistent packages without tests
   install_pkgs "${pkgs[@]}"
 
-  test=true # persistent is the only package with tests
+  test=true # persistent-test is the only persistent package with tests
   cd "./persistent-test"
   test_pkg "persistent-test"
 
 else
-  $CABAL install HUnit QuickCheck 'hspec >= 0.8 && < 0.9' shelltestrunner
+  $CABAL install HUnit QuickCheck 'hspec >= 0.8 && < 1.0' # shelltestrunner
 
   install_pkgs "${pkgs[@]}"
 fi
