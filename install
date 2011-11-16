@@ -64,9 +64,9 @@ wai_pkgs=(        wai
                   wai-handler-fastcgi
                   wai-handler-launch
                   wai-handler-scgi
+                  warp-static
                   wai-websockets
-                  wai-eventmachine
-                  warp-static           )
+                  wai-eventsource       )
 yesod_pkgs=(      yesod-core
                   yesod-json
                   yesod-static
