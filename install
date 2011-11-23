@@ -4,6 +4,47 @@ errorout() { echo "$*" >&2; exit 1; }
 
 usage() { echo 'scripts/install [ --clean ] [ --fast ]'; exit 1; }
 
+# determine what repo you're in dynamically by parsing the output of git
+# remote -v.
+#
+# we need to handle a few platform-specific formats. if you adjust this
+# line to support your platform, please note it here and ensure your fix
+# handles all cases present.
+#
+# Linux - git version 1.7.7.4. using git@ or https, with or without .git
+# extension.
+#
+#   origin  git@github.com:yesodweb/scripts.git (fetch)
+#   origin  https://github.com:yesodweb/scripts.git (fetch)
+#   origin  git@github.com:yesodweb/scripts (fetch)
+#   origin  https://github.com:yesodweb/scripts (fetch)
+#
+###
+determine_repo() {
+  local repo
+
+  if [[ -n "$YESODPKG" ]]; then
+    echo $YESODPKG
+    return
+  fi
+
+  if ! read -r repo < <(git remote -v | sed -r '/^origin.*\/(\S*)\s*\(fetch\)$/!d; s//\1/; s/\.git$//') || [[ -z "$repo" ]]; then
+    cat >&2 <<"EOF"
+
+    unable to determine yesod package to install via `git remote -v`. if
+    you're not using git or otherwise need to manually define the yesod
+    package name, set the YESODPKG environment variable:
+
+    YESODPKG=hamlet ./script/install
+
+EOF
+
+    exit 1
+  fi
+
+  echo "$repo"
+}
+
 test_pkg() {
       if $test; then
         echo "testing $1..."
@@ -81,30 +122,7 @@ yesod_pkgs=(      yesod-core
 # allow an env var to override
 CABAL=${CABAL:-cabal}
 
-###
-#
-# determine what repo you're in dynamically by parsing the output of git
-# remote -v.
-#
-# we need to handle a few platform-specific formats. if you adjust this
-# line to support your platform, please note it here and ensure your fix
-# handles all cases present.
-#
-# Linux - git version 1.7.7.4. using git@ or https, with or without .git
-# extension.
-#
-#   origin  git@github.com:yesodweb/scripts.git (fetch)
-#   origin  https://github.com:yesodweb/scripts.git (fetch)
-#   origin  git@github.com:yesodweb/scripts (fetch)
-#   origin  https://github.com:yesodweb/scripts (fetch)
-#
-###
-if ! read -r repo < <(git remote -v | sed -r '/^origin.*\/(\S*)\s*\(fetch\)$/!d; s//\1/; s/\.git$//'); then
-  errorout 'unable to determine repository name.'
-fi
-
-[[ -z "$repo" ]] && errorout 'unable to determine repository name.'
-
+read -r repo < <(determine_repo)
 echo "Installing for repo $repo..."
 
 # set the pkgs array to those appropriate for that repo
