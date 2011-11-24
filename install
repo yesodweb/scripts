@@ -220,9 +220,11 @@ install_test_dependencies
 install_pkgs "${pkgs[@]}"
 
 if [[ "$repo" == 'persistent' ]]; then
-  cd './persistent-test'
-  test_pkg 'persistent-test'
-  $CABAL check
+  (
+    cd './persistent-test'
+    test_pkg
+    $CABAL check
+  )
 fi
 
 echo ">>> $repo installed successfully."
