@@ -116,7 +116,7 @@ build_pkg() { # {{{
   fi
 
   if ! $CABAL configure --ghc-options="$ghcopts"; then
-    $CABAL install --only-dependencies --dry-run --verbose
+    $CABAL install --only-dependencies
     $CABAL configure --ghc-options='-Wall -Werror'
   fi
 
@@ -132,11 +132,11 @@ test_pkg() { # {{{
 # }}}
 
 install_pkg() { # {{{
-  #if $nosetup; then
-    $CABAL install --dry-run --verbose
-  #else
-    #./Setup.lhs install
-  #fi
+  if $nosetup; then
+    $CABAL install
+  else
+    ./Setup.lhs install
+  fi
 }
 # }}}
 
