@@ -7,7 +7,7 @@ usage() { echo 'scripts/install [ --clean ] [ --fast ]'; exit 1; }
 test_pkg() {
       if $test; then
         echo "testing $1..."
-        $CABAL configure --enable-tests
+        $CABAL configure -ftest --enable-tests
         $CABAL build
         $CABAL test
       fi
@@ -33,13 +33,13 @@ install_pkgs() { # {{{
         $CABAL configure --ghc-options='-Wall -Werror'
       fi
 
-      $CABAL build
-
       test_pkg pkg
 
-      $fast || $CABAL haddock --executables
-
-      ./Setup.lhs install
+      if $fast; then
+        $CABAL install --disable-documentation
+      else
+        $CABAL install
+      fi
     )
   done
 }
