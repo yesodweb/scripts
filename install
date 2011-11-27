@@ -52,6 +52,7 @@ hamlet_pkgs=(     shakespeare
                   hamlet                )
 persistent_pkgs=( pool
                   persistent
+                  persistent-query
                   persistent-template
                   persistent-sqlite
                   persistent-postgresql
