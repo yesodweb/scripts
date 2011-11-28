@@ -7,7 +7,7 @@ usage() { echo 'scripts/install [ --clean ] [ --fast ]'; exit 1; }
 test_pkg() {
       if $test; then
         echo "testing $1..."
-        $CABAL configure --enable-tests
+        $CABAL configure -ftest --enable-tests
         $CABAL build
         $CABAL test
       fi
@@ -33,13 +33,15 @@ install_pkgs() { # {{{
         $CABAL configure --ghc-options='-Wall -Werror'
       fi
 
-      $CABAL build
-
       test_pkg pkg
 
-      $fast || $CABAL haddock --executables
+      if $fast; then
+        $CABAL install --disable-documentation
+      else
+        $CABAL install
+      fi
 
-      ./Setup.lhs install
+      which cabal-src-install && cabal-src-install --src-only
     )
   done
 }
@@ -66,8 +68,7 @@ wai_pkgs=(        wai
                   wai-handler-launch
                   wai-handler-scgi
                   warp-static
-                  wai-websockets
-                  wai-eventsource       )
+                  wai-websockets        )
 yesod_pkgs=(      yesod-core
                   yesod-json
                   yesod-static
@@ -82,8 +83,25 @@ yesod_pkgs=(      yesod-core
 # allow an env var to override
 CABAL=${CABAL:-cabal}
 
-# determine what repo you're in dynamically
-if ! read -r repo < <(git remote -v | grep '^origin\s*\(.*\)\s*(fetch)' | sed 's/^origin\s*\(.*\)\s*(fetch)/\1/' | xargs basename);then
+###
+#
+# determine what repo you're in dynamically by parsing the output of git
+# remote -v.
+#
+# we need to handle a few platform-specific formats. if you adjust this
+# line to support your platform, please note it here and ensure your fix
+# handles all cases present.
+#
+# Linux - git version 1.7.7.4. using git@ or https, with or without .git
+# extension.
+#
+#   origin  git@github.com:yesodweb/scripts.git (fetch)
+#   origin  https://github.com:yesodweb/scripts.git (fetch)
+#   origin  git@github.com:yesodweb/scripts (fetch)
+#   origin  https://github.com:yesodweb/scripts (fetch)
+#
+###
+if ! read -r repo < <(git remote -v | sed -r '/^origin.*\/(\S*)\s*\(fetch\)$/!d; s//\1/; s/\.git$//'); then
   errorout 'unable to determine repository name.'
 fi
 
