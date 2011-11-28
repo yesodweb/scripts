@@ -40,6 +40,8 @@ install_pkgs() { # {{{
       else
         $CABAL install
       fi
+
+      which cabal-src-install && cabal-src-install --src-only
     )
   done
 }
