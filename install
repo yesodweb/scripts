@@ -22,8 +22,14 @@ install_packages() { # {{{
     documentation=""
   fi
 
-  src_install=`which cabal-src-install`
+  echo "checking for cabal-src-install"
+  if which cabal-src-install; then
+    src_install=true
+  else
+    src_install=false
+  fi
 
+  echo "cleaning packages"
   local pkg
   if $clean ; then
     for pkg in ${pkgs[@]}; do
@@ -193,5 +199,6 @@ else
   echo "installing packages for the tests suites"
   $CABAL install HUnit QuickCheck 'hspec >= 0.8 && < 1.0' # shelltestrunner
 
+  echo "installing $repo packages"
   install_packages "${pkgs[@]}"
 fi
