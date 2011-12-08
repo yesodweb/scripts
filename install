@@ -22,6 +22,14 @@ install_packages() { # {{{
     documentation=""
   fi
 
+  src_install=`which cabal-src-install`
+
+  #if $src_install; then
+    #installer=cabal-src-install
+  #else
+    installer=$CABAL
+  #fi
+
   local pkg
   if $clean ; then
     for pkg in ${pkgs[@]}; do
@@ -39,7 +47,6 @@ install_packages() { # {{{
   fi
   echo "all packages installed. On to testing..."
 
-  src_install=`which cabal-src-install`
   for pkg in $pkgs; do
     (
       cd $pkg
