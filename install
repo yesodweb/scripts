@@ -24,12 +24,6 @@ install_packages() { # {{{
 
   src_install=`which cabal-src-install`
 
-  #if $src_install; then
-    #installer=cabal-src-install
-  #else
-    installer=$CABAL
-  #fi
-
   local pkg
   if $clean ; then
     for pkg in ${pkgs[@]}; do
@@ -39,6 +33,9 @@ install_packages() { # {{{
       )
     done
   fi
+
+  echo "installing package dependencies"
+  $CABAL install --only-dependencies ${pkgs[@]}
 
   echo "installing packages: ${pkgs[@]}"
   if ! $CABAL install $documentation --ghc-options='-Wall -Werror' ${pkgs[@]}; then
