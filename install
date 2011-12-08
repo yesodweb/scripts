@@ -15,6 +15,45 @@ test_pkg() {
       $CABAL check
 }
 
+install_packages() { # {{{
+  if $fast; then
+    documentation="--disable-documentation"
+  else
+    documentation=""
+  fi
+
+  local pkg
+  if $clean ; then
+    for pkg in ${pkgs[@]}; do
+      (
+        cd $pkg
+        $CABAL clean
+      )
+    done
+  fi
+
+  echo "installing packages: ${pkgs[@]}"
+  if ! $CABAL install $documentation --ghc-options='-Wall -Werror' ${pkgs[@]}; then
+    echo "installation failed! Please report this to the mail list at http://groups.google.com/group/yesodweb or on the issue tracker at http://github.com/yesodweb/issues"
+    exit 1
+  fi
+  echo "done installing"
+
+  src_install=`which cabal-src-install`
+  for pkg in $pkgs; do
+    (
+      cd $pkg
+      if src_install; then
+        echo $pkg
+        pwd
+        CABAL=$CABAL cabal-src-install --src-only
+      fi
+      test_pkg $pkg
+    )
+  done
+}
+# }}}
+
 install_pkgs() { # {{{
   local pkg
 
@@ -33,7 +72,7 @@ install_pkgs() { # {{{
         $CABAL configure --ghc-options='-Wall -Werror'
       fi
 
-      test_pkg pkg
+      test_pkg $pkg
 
       if $fast; then
         $CABAL install --disable-documentation
@@ -47,38 +86,37 @@ install_pkgs() { # {{{
 }
 # }}}
 
-hamlet_pkgs=(     shakespeare
-                  shakespeare-css
-                  shakespeare-js
-                  shakespeare-text
-                  hamlet                )
-persistent_pkgs=( pool
-                  persistent
-                  persistent-query
-                  persistent-template
-                  persistent-sqlite
-                  persistent-postgresql
-                  persistent-mongoDB    )
-wai_pkgs=(        wai
-                  wai-test
-                  wai-extra
-                  warp
-                  wai-app-static
-                  wai-handler-fastcgi
-                  wai-handler-launch
-                  wai-handler-scgi
-                  warp-static
-                  wai-websockets        )
-yesod_pkgs=(      yesod-core
-                  yesod-json
-                  yesod-static
-                  yesod-persistent
-                  yesod-newsfeed
-                  yesod-form
-                  yesod-auth
-                  yesod-sitemap
-                  yesod-default
-                  yesod                 )
+hamlet_pkgs=(     ./shakespeare
+                  ./shakespeare-css
+                  ./shakespeare-js
+                  ./shakespeare-text
+                  ./hamlet                )
+persistent_pkgs=( ./pool
+                  ./persistent
+                  ./persistent-template
+                  ./persistent-sqlite
+                  ./persistent-postgresql
+                  ./persistent-mongoDB    )
+wai_pkgs=(        ./wai
+                  ./wai-test
+                  ./wai-extra
+                  ./warp
+                  ./wai-app-static
+                  ./wai-handler-fastcgi
+                  ./wai-handler-launch
+                  ./wai-handler-scgi
+                  ./warp-static
+                  ./wai-websockets        )
+yesod_pkgs=(      ./yesod-core
+                  ./yesod-json
+                  ./yesod-static
+                  ./yesod-persistent
+                  ./yesod-newsfeed
+                  ./yesod-form
+                  ./yesod-auth
+                  ./yesod-sitemap
+                  ./yesod-default
+                  ./yesod                 )
 
 # allow an env var to override
 CABAL=${CABAL:-cabal}
@@ -139,18 +177,19 @@ fi
 
 # persistent is handled specially
 if [[ "$repo" == 'persistent' ]]; then
-  # testing dependencies
+  echo "installing packages for the tests suites"
   $CABAL install HUnit QuickCheck 'file-location' 'hspec >= 0.8 && < 0.10'
 
   test=false  # install all persistent packages without tests
-  install_pkgs "${pkgs[@]}"
+  install_packages "${pkgs[@]}"
 
   test=true # persistent-test is the only persistent package with tests
   cd "./persistent-test"
   test_pkg "persistent-test"
 
 else
+  echo "installing packages for the tests suites"
   $CABAL install HUnit QuickCheck 'hspec >= 0.8 && < 1.0' # shelltestrunner
 
-  install_pkgs "${pkgs[@]}"
+  install_packages "${pkgs[@]}"
 fi
