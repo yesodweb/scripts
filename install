@@ -37,15 +37,13 @@ install_packages() { # {{{
     echo "installation failed! Please report this to the mail list at http://groups.google.com/group/yesodweb or on the issue tracker at http://github.com/yesodweb/issues"
     exit 1
   fi
-  echo "done installing"
+  echo "all packages installed. On to testing..."
 
   src_install=`which cabal-src-install`
   for pkg in $pkgs; do
     (
       cd $pkg
-      if src_install; then
-        echo $pkg
-        pwd
+      if $src_install; then
         CABAL=$CABAL cabal-src-install --src-only
       fi
       test_pkg $pkg
