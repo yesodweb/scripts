@@ -6,7 +6,7 @@ usage() { echo 'scripts/install [ --clean ] [ --fast ]'; exit 1; }
 
 test_pkg() {
       if $test; then
-        echo "testing $1..."
+        echo "testing $1"
         $CABAL configure -ftest --enable-tests
         $CABAL build
         $CABAL test
@@ -45,9 +45,9 @@ install_packages() { # {{{
     echo "installation failed! Please report this to the mail list at http://groups.google.com/group/yesodweb or on the issue tracker at http://github.com/yesodweb/issues"
     exit 1
   fi
-  echo "all packages installed. On to testing..."
+  echo "all packages installed. On to testing."
 
-  for pkg in $pkgs; do
+  for pkg in ${pkgs[@]}; do
     (
       cd $pkg
       if $src_install; then
