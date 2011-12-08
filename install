@@ -62,7 +62,8 @@ install_packages() { # {{{
 }
 # }}}
 
-install_pkgs() { # {{{
+# deprecated, but perhaps still useful?
+install_individual_pkgs() { # {{{
   local pkg
 
   for pkg; do
@@ -179,7 +180,7 @@ done
 # allow individual packages to be passed on the commandline
 if [[ $# -ne 0 ]]; then
   $CABAL install HUnit QuickCheck 'hspec >= 0.8 && < 0.10'
-  install_pkgs "$@"
+  install_packages "$@"
   exit $?
 fi
 
