@@ -99,6 +99,7 @@ hamlet_pkgs=(     ./shakespeare
                   ./shakespeare-css
                   ./shakespeare-js
                   ./shakespeare-text
+                  ./shakespeare-i18n
                   ./hamlet                )
 persistent_pkgs=( ./pool
                   ./persistent
