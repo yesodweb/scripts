@@ -95,39 +95,6 @@ install_individual_pkgs() { # {{{
 }
 # }}}
 
-hamlet_pkgs=(     ./shakespeare
-                  ./shakespeare-css
-                  ./shakespeare-js
-                  ./shakespeare-text
-                  ./shakespeare-i18n
-                  ./hamlet                )
-persistent_pkgs=( ./pool
-                  ./persistent
-                  ./persistent-template
-                  ./persistent-sqlite
-                  ./persistent-postgresql
-                  ./persistent-mongoDB    )
-wai_pkgs=(        ./wai
-                  ./wai-test
-                  ./wai-extra
-                  ./warp
-                  ./wai-app-static
-                  ./wai-handler-fastcgi
-                  ./wai-handler-launch
-                  ./wai-handler-scgi
-                  ./warp-static
-                  ./wai-websockets        )
-yesod_pkgs=(      ./yesod-core
-                  ./yesod-json
-                  ./yesod-static
-                  ./yesod-persistent
-                  ./yesod-newsfeed
-                  ./yesod-form
-                  ./yesod-auth
-                  ./yesod-sitemap
-                  ./yesod-default
-                  ./yesod                 )
-
 # allow an env var to override
 CABAL=${CABAL:-cabal}
 
@@ -158,8 +125,7 @@ fi
 echo "Installing for repo $repo..."
 
 # set the pkgs array to those appropriate for that repo
-varname="${repo}_pkgs[@]"
-declare -a pkgs=( ${!varname} )
+source package-list.sh
 [[ "${#pkgs[@]}" -eq 0 ]] && errorout "no packages to install for repository $repo."
 
 # set defaults
