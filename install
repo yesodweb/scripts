@@ -1,230 +1,115 @@
 #!/bin/bash -e
 
-hamlet_pkgs=(     shakespeare
-                  shakespeare-css
-                  shakespeare-js
-                  shakespeare-text
-                  hamlet                )
-persistent_pkgs=( pool
-                  persistent
-                  persistent-template
-                  persistent-sqlite
-                  persistent-postgresql
-                  persistent-mongoDB    )
-wai_pkgs=(        wai
-                  wai-test
-                  wai-extra
-                  warp
-                  wai-app-static
-                  wai-handler-fastcgi
-                  wai-handler-launch
-                  wai-handler-scgi
-                  warp-static
-                  wai-websockets
-                  wai-eventsource       )
-yesod_pkgs=(      yesod-core
-                  yesod-json
-                  yesod-static
-                  yesod-persistent
-                  yesod-newsfeed
-                  yesod-form
-                  yesod-auth
-                  yesod-sitemap
-                  yesod-default
-                  yesod                 )
-
-errorout() { echo "$*" >&2; exit 1; }
-
-usage() { # {{{
+usage() {
   cat << EOF
   usage: ./scripts/install [options] ...
 
   Options:
-
     -c, --clean         run cabal --clean before building
     -f, --fast          skip haddock documentation step
 
-    -nt, --notest       skip package testing step
-    -ne, --noerror      don't add -Werror at configure step
-    -ns, --nosetup      use cabal install instead of ./Setup.lhs install
-
   Environment variables:
-
-    If YESODPKG is defined, it is used as the package name and the
-    dynamic git repository check is skipped.
 
     If CABAL is defined, it is used as the cabal command.
 
 EOF
   exit 1
 }
-# }}}
 
-# determine what repo you're in dynamically by parsing the output of git
-# remote -v.
-#
-# we need to handle a few platform-specific formats. if you adjust this
-# line to support your platform, please note it here and ensure your fix
-# handles all cases present.
-#
-# Linux - git version 1.7.7.4. using git@ or https, with or without .git
-# extension.
-#
-#   origin  git@github.com:yesodweb/scripts.git (fetch)
-#   origin  https://github.com:yesodweb/scripts.git (fetch)
-#   origin  git@github.com:yesodweb/scripts (fetch)
-#   origin  https://github.com:yesodweb/scripts (fetch)
-#
-###
-determine_repo() { # {{{
-  local repo
+# there were three separate places we install testing dependencies. the
+# packages installed were slightly different -- can we agree on one?
+install_test_deps() {
+  #$CABAL install HUnit QuickCheck 'hspec >= 0.8 && < 0.10'
+  #$CABAL install HUnit QuickCheck 'file-location' 'hspec >= 0.8 && < 0.10'
+  #$CABAL install HUnit QuickCheck 'hspec >= 0.8 && < 1.0' # shelltestrunner
 
-  if [[ -n "$YESODPKG" ]]; then
-    echo $YESODPKG
-    return
-  fi
-
-  if ! read -r repo < <(git remote -v | sed -r '/^origin.*\/(\S*)\s*\(fetch\)$/!d; s//\1/; s/\.git$//') || [[ -z "$repo" ]]; then
-    cat >&2 <<"EOF"
-
-    unable to determine yesod package to install via `git remote -v`. if
-    you're not using git or otherwise need to manually define the yesod
-    package name, set the YESODPKG environment variable:
-
-    YESODPKG=hamlet ./script/install
-
-EOF
-
-    exit 1
-  fi
-
-  echo "$repo"
+  # I vote this one :)
+  $CABAL install HUnit QuickCheck 'file-location' 'hspec >= 0.8 && < 0.10'
 }
-# }}}
 
-install_test_dependencies() { # {{{
-  # TODO: what packages have what testing dependencies?
-  $CABAL install HUnit QuickCheck 'hspec >= 0.8 && < 0.10' 'file-location'
-}
-# }}}
+clean_pkgs() {
+  $clean || return
 
-build_pkg() { # {{{
-  if $noerror; then
-    ghcopts='-Wall'
-  else
-    ghcopts='-Wall -Werror'
-  fi
+  local pkg
 
-  if ! $CABAL configure --ghc-options="$ghcopts"; then
-    $CABAL install --only-dependencies
-    $CABAL configure --ghc-options='-Wall -Werror'
-  fi
-
-  $CABAL build
-}
-# }}}
-
-test_pkg() { # {{{
-  $CABAL configure --enable-tests
-  $CABAL build
-  $CABAL test
-}
-# }}}
-
-install_pkg() { # {{{
-  if $nosetup; then
-    $CABAL install
-  else
-    ./Setup.lhs install
-  fi
-}
-# }}}
-
-install_pkgs() { # {{{
   for pkg; do
-    [[ -d "./$pkg" ]] || continue
-
-    echo "==> Installing $pkg..."
-
     (
-      cd "./$pkg"
-
-      if $clean; then
-        echo "--> Cleaning $pkg..."
-        $CABAL clean
-      fi
-
-      echo "--> Building $pkg..."
-      build_pkg
-
-      if $testpkg; then
-        echo "--> Testing $pkg..."
-        test_pkg
-      fi
-
-      $CABAL check
-
-      if ! $fast; then
-        echo "--> Generating haddock documentation for $pkg..."
-        $CABAL haddock --executables
-      fi
-
-      install_pkg
-
-      echo "--> $pkg installed successfully."
+      echo ":: Cleaning $pkg..."
+      cd $pkg
+      $CABAL clean
     )
   done
 }
-# }}}
 
-CABAL=${CABAL:-cabal}
+test_pkgs() {
+  $testpkg || return
+
+  local pkg
+
+  for pkg; do
+    (
+      echo ":: Testing $pkg..."
+      cd $pkg
+
+      # what does this do to fix our dep hell? the refactor made things
+      # more readable (IMO) but it's what the script was doing before --
+      # and i don't get it :)
+      if which cabal-src-install &>/dev/null; then
+        CABAL=$CABAL cabal-src-install --src-only
+      fi
+
+      $CABAL configure -ftest --enable-tests
+      $CABAL build
+      $CABAL test
+    )
+  done
+}
+
+install_packages() {
+  local cabal_opt=''
+
+  $fast && cabal_opt+="--disable-documentation"
+
+  echo ":: Installing $@"
+  $CABAL install --only-dependencies "$@"
+
+  if ! $CABAL install $cabal_opt --ghc-options='-Wall -Werror' "$@"; then
+    cat >&2 <<-EOF
+    Installation failed! Please report this to the mail list at
+    http://groups.google.com/group/yesodweb or on the issue tracker at
+    http://github.com/yesodweb/issues".
+    EOF
+    exit 1
+  fi
+}
 
 testpkg=true
 clean=false
 fast=false
-noerror=false
-nosetup=false
 
 while [[ -n "$1" ]]; do
   case "$1" in
-    -c|--clean)    clean=true    ;;
-    -f|--fast)     fast=true     ;;
-    -nt|--notest)  testpkg=false ;;
-    -ne|--noerror) noerror=true  ;;
-    -ns|--nosetup) nosetup=true  ;;
-    -h|--help)     usage         ;;
-    *)             break         ;;
+    -c|--clean) clean=true    ;;
+    -f|--fast)  fast=true     ;;
+    -h|--help)  usage         ;;
+    *)          break         ;;
   esac
   shift
 done
 
+CABAL="${CABAL:-cabal}"
+
 if [[ $# -ne 0 ]]; then
-  install_test_dependencies
-  install_pkgs "$@"
-  exit $?
+  pkgs=( "$@" )
+else
+  source package-list.sh 2>/dev/null
+  [[ "${#pkgs[@]}" -eq 0 ]] && { echo 'No packages were found to install' >&2; exit 1; }
 fi
 
-# determin what packages to install from the current directory's
-# upstream repository name
-read -r repo < <(determine_repo)
-varname="${repo}_pkgs[@]"
-declare -a pkgs=( ${!varname} )
 
-[[ "${#pkgs[@]}" -eq 0 ]] && errorout "No packages defined to install for repository $repo."
+install_test_deps
+clean_pkgs "${pkgs[@]}"
+install_packages "${pkgs[@]}"
 
-echo ">>> Installing for $repo..."
-
-[[ "$repo" == 'persistent' ]] && testpkg=false
-
-install_test_dependencies
-install_pkgs "${pkgs[@]}"
-
-if [[ "$repo" == 'persistent' ]]; then
-  (
-    cd './persistent-test'
-    test_pkg
-    $CABAL check
-  )
-fi
-
-echo ">>> $repo installed successfully."
+# persistent packages do not get tested
+[[ "$repo" != 'persistent' ]] && test_pkgs "${pkgs[@]}"
