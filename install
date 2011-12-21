@@ -47,8 +47,8 @@ EOF
 
 test_pkg() {
       if $test; then
-        echo "testing $1..."
-        $CABAL configure --enable-tests
+        echo "testing $1"
+        $CABAL configure -ftest --enable-tests
         $CABAL build
         $CABAL test
       fi
@@ -56,7 +56,55 @@ test_pkg() {
       $CABAL check
 }
 
-install_pkgs() { # {{{
+install_packages() { # {{{
+  if $fast; then
+    documentation="--disable-documentation"
+  else
+    documentation=""
+  fi
+
+  echo "checking for cabal-src-install"
+  if which cabal-src-install; then
+    src_install=true
+  else
+    src_install=false
+  fi
+
+  echo "cleaning packages"
+  local pkg
+  if $clean ; then
+    for pkg in ${pkgs[@]}; do
+      (
+        cd $pkg
+        $CABAL clean
+      )
+    done
+  fi
+
+  echo "installing package dependencies"
+  $CABAL install --only-dependencies ${pkgs[@]}
+
+  echo "installing packages: ${pkgs[@]}"
+  if ! $CABAL install $documentation --ghc-options='-Wall -Werror' ${pkgs[@]}; then
+    echo "installation failed! Please report this to the mail list at http://groups.google.com/group/yesodweb or on the issue tracker at http://github.com/yesodweb/issues"
+    exit 1
+  fi
+  echo "all packages installed. On to testing."
+
+  for pkg in ${pkgs[@]}; do
+    (
+      cd $pkg
+      if $src_install; then
+        CABAL=$CABAL cabal-src-install --src-only
+      fi
+      test_pkg $pkg
+    )
+  done
+}
+# }}}
+
+# deprecated, but perhaps still useful?
+install_individual_pkgs() { # {{{
   local pkg
 
   for pkg; do
@@ -74,50 +122,19 @@ install_pkgs() { # {{{
         $CABAL configure --ghc-options='-Wall -Werror'
       fi
 
-      $CABAL build
+      test_pkg $pkg
 
-      test_pkg pkg
+      if $fast; then
+        $CABAL install --disable-documentation
+      else
+        $CABAL install
+      fi
 
-      $fast || $CABAL haddock --executables
-
-      ./Setup.lhs install
+      which cabal-src-install && cabal-src-install --src-only
     )
   done
 }
 # }}}
-
-hamlet_pkgs=(     shakespeare
-                  shakespeare-css
-                  shakespeare-js
-                  shakespeare-text
-                  hamlet                )
-persistent_pkgs=( pool
-                  persistent
-                  persistent-template
-                  persistent-sqlite
-                  persistent-postgresql
-                  persistent-mongoDB    )
-wai_pkgs=(        wai
-                  wai-test
-                  wai-extra
-                  warp
-                  wai-app-static
-                  wai-handler-fastcgi
-                  wai-handler-launch
-                  wai-handler-scgi
-                  warp-static
-                  wai-websockets
-                  wai-eventsource       )
-yesod_pkgs=(      yesod-core
-                  yesod-json
-                  yesod-static
-                  yesod-persistent
-                  yesod-newsfeed
-                  yesod-form
-                  yesod-auth
-                  yesod-sitemap
-                  yesod-default
-                  yesod                 )
 
 # allow an env var to override
 CABAL=${CABAL:-cabal}
@@ -126,8 +143,7 @@ read -r repo < <(determine_repo)
 echo "Installing for repo $repo..."
 
 # set the pkgs array to those appropriate for that repo
-varname="${repo}_pkgs[@]"
-declare -a pkgs=( ${!varname} )
+source package-list.sh
 [[ "${#pkgs[@]}" -eq 0 ]] && errorout "no packages to install for repository $repo."
 
 # set defaults
@@ -149,24 +165,26 @@ done
 # allow individual packages to be passed on the commandline
 if [[ $# -ne 0 ]]; then
   $CABAL install HUnit QuickCheck 'hspec >= 0.8 && < 0.10'
-  install_pkgs "$@"
+  install_packages "$@"
   exit $?
 fi
 
 # persistent is handled specially
 if [[ "$repo" == 'persistent' ]]; then
-  # testing dependencies
+  echo "installing packages for the tests suites"
   $CABAL install HUnit QuickCheck 'file-location' 'hspec >= 0.8 && < 0.10'
 
   test=false  # install all persistent packages without tests
-  install_pkgs "${pkgs[@]}"
+  install_packages "${pkgs[@]}"
 
   test=true # persistent-test is the only persistent package with tests
   cd "./persistent-test"
   test_pkg "persistent-test"
 
 else
+  echo "installing packages for the tests suites"
   $CABAL install HUnit QuickCheck 'hspec >= 0.8 && < 1.0' # shelltestrunner
 
-  install_pkgs "${pkgs[@]}"
+  echo "installing $repo packages"
+  install_packages "${pkgs[@]}"
 fi
