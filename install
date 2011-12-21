@@ -111,5 +111,10 @@ install_test_deps
 clean_pkgs "${pkgs[@]}"
 install_packages "${pkgs[@]}"
 
+# TODO: maybe add pkgname to package-list.sh so we can know the name
+# without have to parse git? preventing testing during persistent is the
+# only reason we need to know that anymore...
+test_pkgs "${pkgs[@]}"
+
 # persistent packages do not get tested
-[[ "$repo" != 'persistent' ]] && test_pkgs "${pkgs[@]}"
+#[[ "$repo" != 'persistent' ]] && test_pkgs "${pkgs[@]}"
