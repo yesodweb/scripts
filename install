@@ -29,9 +29,9 @@ install_packages() { # {{{
     src_install=false
   fi
 
-  echo "cleaning packages"
   local pkg
   if $clean ; then
+    echo "cleaning packages"
     for pkg in ${pkgs[@]}; do
       (
         cd $pkg
@@ -45,7 +45,7 @@ install_packages() { # {{{
 
   echo "installing packages: ${pkgs[@]}"
   if ! $CABAL install $documentation --ghc-options='-Wall -Werror' ${pkgs[@]}; then
-    echo "installation failed! Please report this to the mail list at http://groups.google.com/group/yesodweb or on the issue tracker at http://github.com/yesodweb/issues"
+    echo "installation failure! Please report this to the mail list at http://groups.google.com/group/yesodweb or on the issue tracker at http://github.com/yesodweb/issues"
     exit 1
   fi
   echo "all packages installed. On to testing."
@@ -59,6 +59,7 @@ install_packages() { # {{{
       test_pkg $pkg
     )
   done
+  echo "Success: all packages installed."
 }
 # }}}
 
