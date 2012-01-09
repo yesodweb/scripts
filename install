@@ -7,7 +7,7 @@ usage() { echo 'scripts/install [ --clean ] [ --fast ]'; exit 1; }
 test_pkg() {
       if $test; then
         echo "testing $1"
-        $CABAL configure -ftest --enable-tests
+        $CABAL configure -ftest --enable-tests --disable-optimization --disable-library-profiling
         $CABAL build
         $CABAL test
       fi
