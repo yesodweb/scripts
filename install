@@ -12,7 +12,11 @@ test_pkg() {
         $CABAL test
       fi
 
-      $CABAL check
+      if [[ "$1" == './pool' ]]; then
+        echo "skipping check for pool" # stupid Cabal warning
+      else
+        $CABAL check
+      fi
 }
 
 install_packages() { # {{{
@@ -51,19 +55,19 @@ install_packages() { # {{{
     echo "or on the issue tracker at http://github.com/yesodweb/issues"
     exit 1
   fi
-  echo "all packages installed. On to testing."
+
+  echo "all packages installed. Doing a cabal-src-install and testing."
 
   for pkg in ${pkgs[@]}; do
     (
       cd $pkg
-      if $src_install; then
-        CABAL=$CABAL cabal-src-install --src-only
+      if $src_install && ! CABAL=$CABAL cabal-src-install --src-only; then
+        echo "failed while creating an sdist for cabal-src"
+        exit 1
       fi
       test_pkg $pkg
     )
   done
-  echo ""
-  echo "Success: all packages installed."
 }
 # }}}
 
@@ -167,6 +171,8 @@ if [[ "$repo" == 'persistent' ]]; then
   test=false  # install all persistent packages without tests
   install_packages "${pkgs[@]}"
 
+  echo "now running persistent tests"
+
   test=true # persistent-test is the only persistent package with tests
   cd "./persistent-test"
   test_pkg "persistent-test"
@@ -178,3 +184,6 @@ else
   echo "installing $repo packages"
   install_packages "${pkgs[@]}"
 fi
+
+echo ""
+echo "Success: all packages installed and tested."
