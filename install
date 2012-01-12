@@ -22,12 +22,12 @@ install_packages() { # {{{
     documentation=""
   fi
 
-  echo "checking for cabal-src-install"
   if which cabal-src-install; then
     src_install=true
   else
     src_install=false
   fi
+  echo "cabal-src-install $src_install"
 
   local pkg
   if $clean ; then
@@ -40,7 +40,7 @@ install_packages() { # {{{
     done
   fi
 
-  echo "installing package dependencies"
+  echo "installing package dependencies ${pkgs[@]}"
   $CABAL install --only-dependencies ${pkgs[@]}
 
   echo "installing packages: ${pkgs[@]}"
