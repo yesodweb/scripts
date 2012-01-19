@@ -12,8 +12,8 @@ test_pkg() {
         $CABAL test
       fi
 
-      if [[ "$1" == './pool' ]]; then
-        echo "skipping check for pool" # stupid Cabal warning
+      if [[ "$1" == './mongoDB-haskell' ]]; then
+        echo "skipping check for mongoDB-haskell" # stupid Cabal warning
       else
         $CABAL check
       fi
