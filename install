@@ -1,5 +1,11 @@
 #!/bin/bash -e
 
+# Ugly hack: build mongoDB-haskell without error checking
+if [ -d mongoDB-haskell ]
+then
+    (cd mongoDB-haskell && cabal install)
+fi
+
 errorout() { echo "$*" >&2; exit 1; }
 
 usage() { echo 'scripts/install [ --clean ] [ --fast ]'; exit 1; }
