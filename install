@@ -48,12 +48,16 @@ EOF
 test_pkg() {
       if $test; then
         echo "testing $1"
-        $CABAL configure -ftest --enable-tests
+        $CABAL configure -ftest --enable-tests --disable-optimization --disable-library-profiling
         $CABAL build
         $CABAL test
       fi
 
-      $CABAL check
+      if [[ "$1" == './mongoDB-haskell' ]]; then
+        echo "skipping check for mongoDB-haskell" # stupid Cabal warning
+      else
+        $CABAL check
+      fi
 }
 
 install_packages() { # {{{
@@ -63,16 +67,16 @@ install_packages() { # {{{
     documentation=""
   fi
 
-  echo "checking for cabal-src-install"
   if which cabal-src-install; then
     src_install=true
   else
     src_install=false
   fi
+  echo "cabal-src-install $src_install"
 
-  echo "cleaning packages"
   local pkg
   if $clean ; then
+    echo "cleaning packages"
     for pkg in ${pkgs[@]}; do
       (
         cd $pkg
@@ -81,21 +85,26 @@ install_packages() { # {{{
     done
   fi
 
-  echo "installing package dependencies"
+  echo "installing package dependencies ${pkgs[@]}"
   $CABAL install --only-dependencies ${pkgs[@]}
 
   echo "installing packages: ${pkgs[@]}"
   if ! $CABAL install $documentation --ghc-options='-Wall -Werror' ${pkgs[@]}; then
-    echo "installation failed! Please report this to the mail list at http://groups.google.com/group/yesodweb or on the issue tracker at http://github.com/yesodweb/issues"
+    echo "installation failure!"
+    echo "If you are just installing and haven't mucked with the code,"
+    echo "please report this to the mail list at http://groups.google.com/group/yesodweb"
+    echo "or on the issue tracker at http://github.com/yesodweb/issues"
     exit 1
   fi
-  echo "all packages installed. On to testing."
+
+  echo "all packages installed. Doing a cabal-src-install and testing."
 
   for pkg in ${pkgs[@]}; do
     (
       cd $pkg
-      if $src_install; then
-        CABAL=$CABAL cabal-src-install --src-only
+      if $src_install && ! CABAL=$CABAL cabal-src-install --src-only; then
+        echo "failed while creating an sdist for cabal-src"
+        exit 1
       fi
       test_pkg $pkg
     )
@@ -169,6 +178,9 @@ if [[ $# -ne 0 ]]; then
   exit $?
 fi
 
+git submodule init
+git submodule update
+
 # persistent is handled specially
 if [[ "$repo" == 'persistent' ]]; then
   echo "installing packages for the tests suites"
@@ -176,6 +188,8 @@ if [[ "$repo" == 'persistent' ]]; then
 
   test=false  # install all persistent packages without tests
   install_packages "${pkgs[@]}"
+
+  echo "now running persistent tests"
 
   test=true # persistent-test is the only persistent package with tests
   cd "./persistent-test"
@@ -188,3 +202,6 @@ else
   echo "installing $repo packages"
   install_packages "${pkgs[@]}"
 fi
+
+echo ""
+echo "Success: all packages installed and tested."
