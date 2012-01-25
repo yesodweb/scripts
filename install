@@ -14,6 +14,9 @@ usage() { echo 'scripts/install [ --clean ] [ --fast ]'; exit 1; }
 # Linux - git version 1.7.7.4. using git@ or https, with or without .git
 # extension.
 #
+# Mac OSX - git version 1.7.5.4. using git@ or https, with or without
+# .git extension.
+#
 #   origin  git@github.com:yesodweb/scripts.git (fetch)
 #   origin  https://github.com:yesodweb/scripts.git (fetch)
 #   origin  git@github.com:yesodweb/scripts (fetch)
@@ -28,7 +31,7 @@ determine_repo() {
     return
   fi
 
-  if ! read -r repo < <(git remote -v | sed -r '/^origin.*\/(\S*)\s*\(fetch\)$/!d; s//\1/; s/\.git$//') || [[ -z "$repo" ]]; then
+  if ! read -r repo < <(git remote -v | sed '/^origin.*\/\([^ ]*\) *(fetch)$/!d; s//\1/; s/\.git$//') || [[ -z "$repo" ]]; then
     cat >&2 <<"EOF"
 
     unable to determine yesod package to install via `git remote -v`. if
