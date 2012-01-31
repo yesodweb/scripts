@@ -92,7 +92,7 @@ install_packages() { # {{{
   $CABAL install --only-dependencies ${pkgs[@]}
 
   echo "installing packages: ${pkgs[@]}"
-  if ! $CABAL install $documentation --ghc-options='-Wall -Werror' ${pkgs[@]}; then
+  if ! $CABAL install -ftest_export $documentation --ghc-options='-Wall -Werror' ${pkgs[@]}; then
     echo "installation failure!"
     echo "If you are just installing and haven't mucked with the code,"
     echo "please report this to the mail list at http://groups.google.com/group/yesodweb"
