@@ -51,7 +51,7 @@ EOF
 test_pkg() {
       if $test; then
         echo "testing $1"
-        $CABAL configure -ftest --enable-tests --disable-optimization --disable-library-profiling
+        $CABAL configure -ftest -ftest_export --enable-tests --disable-optimization --disable-library-profiling
         $CABAL build
         $CABAL test
       fi
