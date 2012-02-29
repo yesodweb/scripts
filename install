@@ -94,8 +94,11 @@ install_packages() { # {{{
   echo "installing packages: ${pkgs[@]}"
   if ! $CABAL install -ftest_export $documentation --ghc-options='-Wall -Werror' ${pkgs[@]}; then
     echo "installation failure!"
-    echo "If you are just installing and haven't mucked with the code,"
-    echo "please report this to the mail list at http://groups.google.com/group/yesodweb"
+    echo ""
+    echo "Please try a clean build with: ./script/install --clean"
+    echo ""
+    echo "If you are peforming a clean instal and haven't mucked with the code,"
+    echo "please report this error to the mail list at http://groups.google.com/group/yesodweb"
     echo "or on the issue tracker at http://github.com/yesodweb/$repo/issues"
     exit 1
   fi
