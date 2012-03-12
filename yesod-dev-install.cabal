@@ -1,0 +1,38 @@
+name:            yesod-dev-install
+version:         0.0
+license:         MIT
+license-file:    LICENSE
+author:          Greg Weber <greg@gregweber.info>
+maintainer:      Greg Weber <greg@gregweber.info>
+synopsis:        build yesod repos from source
+description:     build yesod repos from source
+
+stability:       Beta
+cabal-version:   >= 1.8
+build-type:      Simple
+homepage:        http://www.yesodweb.com/
+
+flag ghc7
+
+executable install
+    main-is: install.hs
+   
+    extensions: OverloadedStrings, QuasiQuotes, CPP, DeriveDataTypeable
+
+    if flag(ghc7)
+        build-depends:   base            >= 4.3      && < 5
+        cpp-options:     -DGHC7
+    else
+        build-depends:   base            >= 4        && < 4.3
+    build-depends: shelly
+                 , text
+                 , system-filepath
+                 , shakespeare-text
+                 , cmdargs
+                 , system-filepath
+                 -- , system-fileio
+                 --, file-location
+
+    ghc-options:     -Wall
+
+    extensions: OverloadedStrings 
