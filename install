@@ -5,4 +5,4 @@ cd $DIR
 cabal install --only-dependencies
 cabal build
 cd ..
-scripts/dist/build/install/install
+exec scripts/dist/build/install/install
