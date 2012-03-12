@@ -1,7 +1,8 @@
 #!/bin/bash -e
 
 DIR="$( cd "$( dirname "$0" )" && pwd )"
+cd $DIR
 cabal install --only-dependencies
 cabal build
-cd $DIR/..
+cd ..
 scripts/dist/build/install/install
