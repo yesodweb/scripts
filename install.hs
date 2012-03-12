@@ -8,7 +8,7 @@ import Data.Text.Lazy (Text)
 import Control.Monad (unless, forM_)
 import System.Console.CmdArgs
 
-#if __GLASGOW_HASKELL__ < 740 
+#if __GLASGOW_HASKELL__ < 704
 import Data.Monoid (Monoid, mappend)
 infixr 5 <>
 (<>) :: Monoid m => m -> m -> m
