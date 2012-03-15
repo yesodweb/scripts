@@ -2,8 +2,6 @@
 
 DIR="$( cd "$( dirname "$0" )" && pwd )"
 cd $DIR
-cabal configure
-cabal install --only-dependencies
-cabal build
+cabal-dev install
 cd ..
 exec scripts/dist/build/install/install
