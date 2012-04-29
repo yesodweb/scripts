@@ -99,7 +99,7 @@ install_packages repo cabal cabal_install opts test pkgs = do
 
   Please try a clean build with: ./script/install --clean
 
-  If you are peforming a clean instal and haven't mucked with the code,
+  If you are peforming a clean install and haven't mucked with the code,
   Please report this error to the mail list at http://groups.google.com/group/yesodweb
   or on the issue tracker at http://github.com/yesodweb/#{repo}/issues
 |]
