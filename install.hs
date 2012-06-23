@@ -1,11 +1,10 @@
 import Shelly
 import Prelude hiding (FilePath)
-import Filesystem.Path.CurrentOS (FilePath)
 
 import Text.Shakespeare.Text (lt)
 import qualified Data.Text.Lazy as LT
 import Data.Text.Lazy (Text)
-import Control.Monad (unless, forM_)
+import Control.Monad (forM_)
 import System.Console.CmdArgs
 
 #if __GLASGOW_HASKELL__ < 704
