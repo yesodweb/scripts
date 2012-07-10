@@ -89,10 +89,10 @@ install_packages repo cabal cabal_install opts test pkgs = do
 
   echo $ "installing package dependencies for " <> repo
 
-  cabal_install $ "--only-dependencies":pkgs
+  cabal_install $ "--force-reinstalls":"--only-dependencies":pkgs
 
   echo $ "installing packages: " <> LT.intercalate " " pkgs
-  let i = cabal_install $ "-ftest_export": documentation ++ ["--ghc-options=-Wall -Werror"] ++ pkgs
+  let i = cabal_install $ "--force-reinstalls":"-ftest_export": documentation ++ ["--ghc-options=-Wall -Werror"] ++ pkgs
   catchany_sh i $ \_ -> errorExit [lt|
   installation failure!
 
@@ -112,7 +112,7 @@ install_packages repo cabal cabal_install opts test pkgs = do
 
   echo [lt|cabal-src-install #{show src_install}|]
 
-  forM_ pkgs $ \pkg -> do
+  forM_ (filter (LT.isPrefixOf "./") pkgs) $ \pkg -> do
     chdir (fromText pkg) $ do
       when src_install $
         catchany_sh (run_ "cabal-src-install" ["--src-only"]) $ \_ -> do
