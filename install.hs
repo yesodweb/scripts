@@ -157,7 +157,7 @@ install_individual_pkgs() {
 main :: IO ()
 main = shelly $ verbosely $ do
   -- allow an env var to override
-  cabal <- fmap fromText $ getenv_def "CABAL" "cabal"
+  cabal <- fmap fromText $ get_env_def "CABAL" "cabal"
   let cabal_install = command_ cabal ["install"]
 
   repo <- determine_repo
