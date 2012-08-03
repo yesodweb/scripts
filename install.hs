@@ -180,7 +180,7 @@ main = shelly $ verbosely $ do
   if repo == "persistent"
     then do
       echo "installing packages for the tests suites"
-      cabal_install ["--force-reinstalls","HUnit","QuickCheck","file-location","hspec >= 1.2 && < 1.3"]
+      cabal_install ["--force-reinstalls","HUnit","QuickCheck","file-location","hspec >= 1.3 && < 1.4"]
 
       -- install all persistent packages without tests
       install False pkgs
@@ -193,7 +193,7 @@ main = shelly $ verbosely $ do
 
     else do
       echo "installing packages for the tests suites"
-      cabal_install ["--force-reinstalls","HUnit","QuickCheck","hspec >= 1.2 && < 1.3", "blaze-html >= 0.5 && < 0.6"]
+      cabal_install ["--force-reinstalls","HUnit","QuickCheck","hspec >= 1.3 && < 1.4", "blaze-html >= 0.5 && < 0.6"]
 
       echo [lt|installing #{repo} packages|]
       install True pkgs
