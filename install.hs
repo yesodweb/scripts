@@ -44,9 +44,10 @@ data CmdOptions = CmdOptions {
 -}
 determine_repo :: ShIO Text
 determine_repo = do
-  pkg <- getenv "YESODPKG"
-  if not $ LT.null pkg then return pkg
-    else do
+  mpkg <- get_env "YESODPKG"
+  case mpkg of
+    Just pkg -> return pkg
+    Nothing -> do
       repo <- fmap LT.strip $ run "sh" ["-c", "git remote -v | sed '/^origin.*\\/\\([^ ]*\\) *(fetch)$/!d; s//\\1/; s/\\.git$//'"]
       when (LT.null repo) $ errorExit [lt|
 
