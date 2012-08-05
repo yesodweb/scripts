@@ -6,6 +6,7 @@ import qualified Data.Text.Lazy as LT
 import Data.Text.Lazy (Text)
 import Control.Monad (forM_)
 import System.Console.CmdArgs
+import Data.Maybe (fromMaybe)
 
 #if __GLASGOW_HASKELL__ < 704
 import Data.Monoid (Monoid, mappend)
@@ -157,7 +158,7 @@ install_individual_pkgs() {
 main :: IO ()
 main = shelly $ verbosely $ do
   -- allow an env var to override
-  cabal <- fmap fromText $ fromMaybe "cabal" get_env "CABAL"
+  cabal <- fmap (fromText . fromMaybe "cabal") $ get_env "CABAL"
   let cabal_install = command_ cabal ["install"]
 
   repo <- determine_repo
