@@ -92,7 +92,7 @@ install_packages() { # {{{
   $CABAL install --only-dependencies ${pkgs[@]}
 
   echo "installing packages: ${pkgs[@]}"
-  if ! $CABAL install -ftest_export $documentation --ghc-options='-Wall -Werror' ${pkgs[@]}; then
+  if ! $CABAL install -ftest_export $documentation --ghc-options='-Wall' ${pkgs[@]}; then
     echo "installation failure!"
     echo ""
     echo "Please try a clean build with: ./script/install --clean"
@@ -132,9 +132,9 @@ install_individual_pkgs() { # {{{
 
       $clean && $CABAL clean
 
-      if ! $CABAL configure --ghc-options='-Wall -Werror'; then
+      if ! $CABAL configure --ghc-options='-Wall'; then
         $CABAL install --only-dependencies
-        $CABAL configure --ghc-options='-Wall -Werror'
+        $CABAL configure --ghc-options='-Wall'
       fi
 
       test_pkg $pkg

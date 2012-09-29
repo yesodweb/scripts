@@ -94,7 +94,7 @@ install_packages repo cabal cabal_install opts test pkgs = do
   cabal_install $ "--force-reinstalls":"--only-dependencies":pkgs
 
   echo $ "installing packages: " <> LT.intercalate " " pkgs
-  let i = cabal_install $ "--force-reinstalls":"-ftest_export": documentation ++ ["--ghc-options=-Wall -Werror"] ++ pkgs
+  let i = cabal_install $ "--force-reinstalls":"-ftest_export": documentation ++ ["--ghc-options=-Wall"] ++ pkgs
   catchany_sh i $ \_ -> errorExit [lt|
   installation failure!
 
@@ -136,9 +136,9 @@ install_individual_pkgs() {
 
       $clean && $CABAL clean
 
-      if ! $CABAL configure --ghc-options='-Wall -Werror'; then
+      if ! $CABAL configure --ghc-options='-Wall'; then
         $CABAL install --only-dependencies
-        $CABAL configure --ghc-options='-Wall -Werror'
+        $CABAL configure --ghc-options='-Wall'
       fi
 
       test_pkg $pkg
